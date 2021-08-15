@@ -11,13 +11,13 @@ import (
 func InsertService(H sattypes.BaseHandler, s *sattypes.Service) error {
 	// prepare insert query for sqlite*/
 	stmt, err := H.DB.Prepare("INSERT into services (service_type, service_name, " +
-		"service_tocheck, interval, contact_group, owner_id, service_expected) values(?,?,?,?,?,?,?)")
+		"service_tocheck, interval, contact_group, owner_id, service_expected, testlocations) values(?,?,?,?,?,?,?,?)")
 
 	if err != nil {
 		return err
 	}
 
-	res, err := stmt.Exec(s.Type, s.Name, s.ToCheck, s.Interval, s.ContactGroup, s.OwnerID, s.Expected)
+	res, err := stmt.Exec(s.Type, s.Name, s.ToCheck, s.Interval, s.ContactGroup, s.OwnerID, s.Expected, s.Locations)
 	if err != nil {
 		return err
 	}
