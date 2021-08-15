@@ -1,0 +1,48 @@
+{{define "head"}}
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns= "http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="google" content="notranslate">
+  <meta http-equiv="Content-Language" content="en">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>ICMP.INFO</title>
+  <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i">
+  <link rel="stylesheet" href="/assets/fonts/fontawesome-all.min.css">
+  <link rel="stylesheet" href="/assets/fonts/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/fonts/fontawesome5-overrides.min.css">
+  <link rel="stylesheet" href="/assets/datatables/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="/assets/emailsinput/src/css/lib/email.css">
+  <link rel="stylesheet" href="/assets/custom.css">
+</head>
+<body id="page-top">
+<script src="/assets/js/jquery-3.5.1.js">
+</script>
+<script src="/assets/bootstrap/js/bootstrap.min.js"></script>
+<div id="wrapper">
+  <nav class="navbar navbar-dark align-items-start sidebar sidebar-dark bg-gradient-primary">
+    <div class="container-fluid d-flex flex-column p-0"><a class="navbar-brand d-flex justify-content-center align-items-center sidebar-brand m-0" href="/">
+      <div class="sidebar-brand-icon"><i class="fas fa-robot"></i></div>
+      <div class="sidebar-brand-text mx-4"><span>ICMP</span></div>
+    </a>
+      <ul class="navbar-nav text-dark">
+        {{ if .U.LoggedIn  }}
+        <li class="nav-item"><a class="nav-link" href="/services"><i class="fas fa-tachometer-alt"></i><span>Services</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="/alertgroups"><i class="fas fa-table"></i><span>Alert groups</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="/profile"><i class="fas fa-user"></i><span>Profile</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="/logout"><i class="far fa-user-circle"></i><span>Logout</span></a></li>
+        {{ end }}
+        {{ if not .U.LoggedIn  }}
+        <li class="nav-item"><a class="nav-link" href="/login"><i class="far fa-user-circle"></i><span>Login</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="/register"><i class="fas fa-user-circle"></i><span>Register</span></a></li>
+        {{ end }}
+      </ul>
+    </div>
+  </nav>
+  {{end}}
+  {{define "footer"}}
+  </div>
+</body>
+</html>
+{{end}}

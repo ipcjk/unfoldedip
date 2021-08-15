@@ -1,0 +1,83 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      <h3 class="text-dark mb-4">Register</h3>
+      <div class="row mb-4">
+        <!---  col-lg-8 is a bootstrap grid for mixed devices -->
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card mb-4">
+                <!-- pretty header -->
+                {{ if eq .State 1 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing formular inputs, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 2 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing email address, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 3 }}
+                <div class="alert alert-danger" role="alert">
+                  Error querying user database, please try again later
+                </div>
+                {{end}}
+                {{ if eq .State 4 }}
+                <div class="alert alert-info" role="alert">
+                  User exist already, please login or reset your password
+                </div>
+                {{end}}
+                {{ if eq .State 5 }}
+                <div class="alert alert-danger" role="alert">
+                  No password given, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 6 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing password, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 7 }}
+                <div class="alert alert-danger" role="alert">
+                  Error inserting user into database, please try again later
+                </div>
+                {{end}}
+                <div class="card-header">
+                  <p class="text-primary m-0 fw-bold">Would you mind registering to use our excellent monitoring service?</p>
+                </div>
+                <div class="card-body">
+                  <!-- post formular to the same handler -->
+                  <form method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="email"><strong>Email</strong></label>
+                          <input class="form-control" required="required" type="text" id="email" placeholder="" name="email"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="password"><strong>Password</strong></label>
+                          <input class="form-control" required="required" type="password" id="password" placeholder="" name="password"></div>
+                      </div>
+                    </div>
+                    <div class="mb-4">
+                      <button class="btn btn-success btn-sm" type="submit">Register</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{template "footer" .}}

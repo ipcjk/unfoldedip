@@ -1,0 +1,215 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      {{ range .Notices }}
+      <div class="alert alert-primary" role="alert">
+        {{ . }}
+      </div>
+      {{ end }}
+      {{ range .Errors }}
+      <div class="alert alert-warning" role="alert">
+        {{ . }}
+      </div>
+      {{ end }}
+      <div class="d-sm-flex justify-content-between align-items-center mb-4">
+        {{ if eq .NextFunction "edit" }}
+        <h3 class="text-dark mb-0">Edit service {{.Service.Name}}</h3>
+        {{ else }}
+        <h3 class="text-dark mb-0">Add service</h3>
+        {{ end }}
+      </div>
+      <div class="row mb-4">
+        <!---  col-lg-8 is a bootstrap grid for mixed devices -->
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card mb-4">
+                <!-- pretty header -->
+                <div class="card-header">
+                  <a href="/services"><button type="button" class="btn btn-primary">Back to services</button></a>
+                  {{ if eq .NextFunction "edit" }}
+                  <a href="/service_logs?id={{.Service.ServiceID}}"><button type="button" class="btn btn-primary">Go to logs</button></a>
+                  {{ end }}
+                </div>
+                <div class="card-body">
+                  <!-- post formular to the same handler -->
+                  <form method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label"><strong>Type of check</strong></label>
+                          <!-- Little bit of redundancy :-( -->
+                          <div class="form-check">
+                            {{if eq "http" .Service.Type }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="http" checked name="checktype" value="http">
+                            {{ else }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="http" name="checktype" value="http">
+                            {{ end }}
+                            <label class="form-check-label" for="http">
+                            <i class="fas fa-window-restore">&nbsp; HTTP</i></label>
+                          </div>
+                          <div class="form-check">
+                            {{if eq "ping" .Service.Type }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="ping" checked name="checktype" value="ping">
+                            {{ else }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="ping"  name="checktype" value="ping">
+                            {{ end }}
+                            <label class="form-check-label" for="ping">
+                              <i class="fas fa-network-wired ">&nbsp; Ping</i></label>
+                          </div>
+                          <div class="form-check">
+                            {{if eq "tcp" .Service.Type }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="tcp" checked name="checktype" value="tcp">
+                            {{ else }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="tcp"  name="checktype" value="tcp">
+                            {{ end }}
+                            <label class="form-check-label" for="tcp">
+                              <i class="fas fa-network-wired ">&nbsp; TCP</i></label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="servicename"><strong>Service Name</strong></label>
+                          <input class="form-control"  type="text" id="servicename"  placeholder="Name for identification" name="servicename"  value="{{.Service.Name}}">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="httpurl"><strong>HTTP URL</strong></label>
+                          {{ if eq .Service.Type "http" }}
+                          <input class="form-control"  type="text" id="httpurl"  placeholder="https://" name="url"  value="{{.Service.ToCheck}}">
+                          {{ else }}
+                          <input class="form-control"  type="text" id="httpurl"  placeholder="https://" name="url"  value="{{.Service.ToCheck}}" disabled="">
+                          {{ end }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="hostname"><strong>Hostname or IP address</strong></label>
+                          {{ if eq .Service.Type "ping" }}
+                          <input class="form-control" type="text" id="hostname" placeholder="host" name="hostname"  value="{{.Service.ToCheck}}">
+                          {{ else }}
+                          <input class="form-control" type="text" id="hostname" placeholder="host" name="hostname"  value="{{.Service.ToCheck}}" disabled="">
+                          {{ end }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="hosttcp"><strong>TCP-Connection</strong></label>
+                          {{ if eq .Service.Type "tcp" }}
+                          <input class="form-control"  type="text" id="hosttcp"  placeholder="hostname:portnumber" name="hosttcp"  value="{{.Service.ToCheck}}">
+                          {{ else }}
+                          <input class="form-control"  type="text" id="hosttcp"  placeholder="hostname:portnumber" name="hosttcp"  value="{{.Service.ToCheck}}" disabled="">
+                          {{ end }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="expected"><strong>Expectation</strong></label>
+                          <input class="form-control"  type="text" id="expected"  placeholder="Expected body result (if any)" name="expected" value="{{.Service.Expected}}"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="interval"><strong>Check interval</strong></label><select name="interval" id="interval" class="form-select">
+                          {{ range $y := .AllowedIntervals }}
+                          {{ if eq $y $.Service.Interval }}
+                          <option value="{{$y}}" selected="">{{$y}} seconds</option>
+                          {{ else }}
+                          <option value="{{$y}}">{{$y}} seconds</option>
+                          {{ end }}
+                          {{ end }}
+                        </select></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4">
+                          <label class="form-label" for="contactgroup"><strong>Contact group</strong></label>
+                          <select  id="contactgroup" name="contactgroup" class="form-select">
+                          {{ range $x := .AlertGroups }}
+                          <option value="{{$x.ContactID}}" {{ if eq $x.ContactID $.Service.ContactGroup }}
+                                  selected="" {{end}}>
+                            {{ $x.GroupName}}
+                          </option>
+                          {{ end }}
+                        </select></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4">
+                          <label class="form-label" for="locations"><strong>Test location (default and no select = any)</strong></label>
+                          <select  id="locations" name="locations" class="form-select" multiple>
+                            {{ range $x := .SatAgentLocations }}
+                            <option value="{{$x}}">{{ $x}}</option>
+                            {{ end }}
+                          </select></div>
+                      </div>
+                    </div>
+                    <div class="mb-4"></div>
+                    <input type="hidden" id="testlocations" name="testlocations" value="{{.Service.Locations}}">
+                    <input type="hidden" name="csrf" value="{{.U.UserSession.CSRF}}">
+                    {{ if eq .NextFunction "edit" }}
+                    <input type="hidden" name="id" value="{{.Service.ServiceID}}">
+                    <input type="hidden" name="nextfunction" value="{{.NextFunction}}">
+                    <button class="btn btn-success btn-sm" type="submit">Update service</button>
+                    {{ else }}
+                    <button class="btn btn-success btn-sm" type="submit">Create service</button>
+                    {{ end }}
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+  // select update for locations
+  $(function() {
+    let str = $('#testlocations').val();
+    $.each(str.split(" "), function(i, e){
+      $("#locations option[value='" + e + "']").prop("selected", true);
+    });
+  });
+
+  // disable or enable right text field
+  function enabledisableinputs() {
+    let checktype = document.getElementsByName('checktype')
+    for(let i = 0; i < checktype.length; i++){
+      if (checktype[i].checked) {
+        switch (checktype[i].value) {
+          case "ping":
+            document.getElementById("hosttcp").setAttribute('disabled', 'disabled')
+            document.getElementById("httpurl").setAttribute('disabled', 'disabled')
+            document.getElementById('hostname').removeAttribute('disabled');
+            break;
+          case "http":
+            document.getElementById("hosttcp").setAttribute('disabled', 'disabled')
+            document.getElementById("hostname").setAttribute('disabled', 'disabled')
+            document.getElementById('httpurl').removeAttribute('disabled');
+            break;
+          case "tcp":
+            document.getElementById("hostname").setAttribute('disabled', 'disabled')
+            document.getElementById("httpurl").setAttribute('disabled', 'disabled')
+            document.getElementById("expected").setAttribute('disabled', 'disabled')
+            document.getElementById('hosttcp').removeAttribute('disabled');
+            break;
+        }
+    }}}
+</script>
+{{template "footer" .}}

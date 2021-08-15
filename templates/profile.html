@@ -1,0 +1,106 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      <h3 class="text-dark mb-4">Profile</h3>
+      <div class="row mb-3">
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card shadow mb-3">
+                <!-- pretty header -->
+                {{ if eq .State 1 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing formular inputs, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 2 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing email address, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 3 }}
+                <div class="alert alert-danger" role="alert">
+                  Error querying user database, please try again later
+                </div>
+                {{end}}
+                {{ if eq .State 4 }}
+                <div class="alert alert-info" role="alert">
+                  User exist already, please login or reset your password
+                </div>
+                {{end}}
+                {{ if eq .State 5 }}
+                <div class="alert alert-danger" role="alert">
+                  No/Wrong original password given, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 6 }}
+                <div class="alert alert-danger" role="alert">
+                  Error parsing password, please try again
+                </div>
+                {{end}}
+                {{ if eq .State 7 }}
+                <div class="alert alert-danger" role="alert">
+                  Error updating user into database, please try again later
+                </div>
+                {{end}}
+                {{ if eq .State 8 }}
+                <div class="alert alert-success" role="alert">
+                  Profile updated successfully
+                </div>
+                {{end}}
+                <div class="card-header py-3">
+                  <p class="text-primary m-0 fw-bold">Email</p>
+                </div>
+                <div class="card-body">
+                  <form method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-3"><label class="form-label" for="email"><strong>Email Address</strong></label>
+                          <input class="form-control" type="email" id="email" placeholder="user.name" name="email" readonly value="{{ .U.Email}} "></div>
+                      </div>
+                      <div class="col">
+                        <div class="mb-3"><label class="form-label" for="emailnew"><strong>New Email Address</strong></label>
+                          <input class="form-control" required="required" type="email" id="emailnew" placeholder="{{.U.Email}}" name="emailnew">
+                          <input type="hidden" name="csrf" value="{{.U.UserSession.CSRF}}">
+                          <input type="hidden" name="changeemail" value="1">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mb-3"><button class="btn btn-success btn-sm" type="submit">Save Profile</button></div>
+                  </form>
+                </div>
+                <div class="card-header py-3">
+                  <p class="text-primary m-0 fw-bold">Password</p>
+                </div>
+                <div class="card-body">
+                  <form method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-3"><label class="form-label" for="password"><strong>Password</strong></label>
+                          <input name="password" required="required" id="password" class="form-control" type="password"></div>
+                      </div>
+                      <div class="col">
+                        <div class="mb-3"><label class="form-label" for="newpassword"><strong>New Password</strong></label>
+                          <input name="newpassword" required="required" id="newpassword" class="form-control" type="password">
+                          <input type="hidden" name="csrf" value="{{.U.UserSession.CSRF}}">
+                          <input type="hidden" name="changepassword" value="1">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mb-3"><button class="btn btn-success btn-sm" type="submit">Change Password</button></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{template "footer" .}}

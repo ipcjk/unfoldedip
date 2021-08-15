@@ -1,0 +1,147 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+    mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <!-- Modal for delete -->
+    <div class="modal fade" id="deleteModal" role="dialog" tabindex="-1">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Service Removal</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Do you really want to delete monitoring for this service?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-light" type="button" data-bs-dismiss="modal">No</button>
+            <button class="btn btn-primary" type="button" id="btnDeleteYes">Yes, please remove</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid">
+      <div class="d-sm-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-dark mb-0">Services</h3>
+      </div>
+      <div class="card shadow">
+        <div class="card-header py-3">
+            <a href="/service_add"><button type="button" class="btn btn-primary">Add a new service</button></a>
+            <a href="/services_logs"><button type="button" class="btn btn-primary">All service logs</button></a>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive table mt-2" role="grid" aria-describedby="dataTable_info">
+            <table class="table my-0" id="dataTable">
+              <thead>
+              <tr>
+                <th style="width: 10%">Status</th>
+                <th>Service</th>
+                <th>Last Event</th>
+                <th>Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              {{ range $x := .Services }}
+              <tr id="{{ $x.ServiceID}}" data-id="{{ $x.ServiceID}}">
+                <td>
+                  {{ if eq $x.ServiceState "SERVICE_UP" }}
+                  <i class="fas fa-thumbs-up greencolor"></i>
+                  {{ else if eq $x.ServiceState "SERVICE_DOWN" }}
+                  <i class="fas fa-thumbs-down redcolor"></i>
+                  {{ else }}
+                  <i class="fas fa-question orangecolor"></i>
+                  {{ end }}
+                </td>
+                {{ if eq $x.Type "http" }}
+                <td><i class="fas fa-window-restore">
+                  {{if eq $x.Name $x.ToCheck}}{{ $x.Name }}{{else}}
+                  {{ $x.Name }}&nbsp;{{ $x.ToCheck }}{{end}}</i>
+                </td>
+                {{ end }}
+                {{ if eq $x.Type "ping" }}
+                <td><i class="fas fa-network-wired ">
+                  {{if eq $x.Name $x.ToCheck}}{{ $x.Name }}{{else}}
+                  {{ $x.Name }}&nbsp;{{ $x.ToCheck }}{{end}}</i>
+                </td>
+                {{ end }}
+                {{ if eq $x.Type "tcp" }}
+                <td><i class="fas fa-ethernet ">
+                  {{if eq $x.Name $x.ToCheck}}{{ $x.Name }}{{else}}
+                  {{ $x.Name }}&nbsp;{{ $x.ToCheck }}{{end}}</i>
+                </td>
+                {{ end }}
+                <td> <a href="/service_logs?id={{ $x.ServiceID}}">{{ $x.LastEvent }}</a></td>
+                <td>
+                  <a href="/service_edit?id={{ $x.ServiceID}}"><i class="fas fa-edit"></i></a>
+                  <a href="#"><i class="fas fa-trash remove" id="delete{{$x.ServiceID}}"></i></a></td>
+              </tr>
+              {{end }}
+              </tbody>
+              <tfoot>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/assets/datatables/jquery.dataTables.min.js">
+</script>
+<script src="/assets/datatables/dataTables.bootstrap5.min.js">
+</script>
+<script>$(document).ready(function() {
+  $('#dataTable').DataTable({
+    "pageLength": 25,
+    "aaSorting": [],
+    "autowidth" : false
+  });
+});
+</script>
+<script>
+    // catch click on remove button
+    $('#dataTable').on('click', '.remove', function () {
+      // get service-id from row
+      var id = $(this).closest('tr').data('id');
+      // save current delete-id to modal element
+      var idelem = $(this).attr('id');
+      // show modal window and save current ids as data-id and serviceid
+      $('#deleteModal').data('id', idelem).data('serviceid', id).modal('show');
+      //$("#deleteModal .modal-body").text("Do you really want to remove the service?");
+    });
+
+    // catch delete-"YES" from modal window
+    $("body").on('click', '#btnDeleteYes', function() {
+      // read data-id from modal window
+      var id = $('#deleteModal').data('id');
+      // read service id from tr
+      var serviceid = $('#deleteModal').data('serviceid');
+      // remove TR form view
+      $('#' + id).parents("tr").remove();
+      // call to service to alert
+      $.ajax({
+        type: 'POST',
+        url: "/service_delete",
+        data: {
+          'id': serviceid,
+          'csrf': "{{.U.UserSession.CSRF}}",
+        },
+        success: function(msg){
+        }
+      });
+      // hide modal window again
+      $('#deleteModal').modal('hide');
+    });
+</script>
+<script>
+  // reload the overview every 30 seconds, so we have fresh information
+  // todo someday: replace with datatable json reload function
+  window.setInterval('refresh()', 10000);
+  function refresh() {
+    // todo, if the modal is visible, dont reload
+    window .location.reload(true);
+  }
+</script>
+{{template "footer" .}}

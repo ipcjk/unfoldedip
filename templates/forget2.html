@@ -1,0 +1,38 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      <h3 class="text-dark mb-4">Forgot password</h3>
+      <div class="row mb-4">
+        <!---  col-lg-8 is a bootstrap grid for mixed devices -->
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card mb-4">
+                <!-- pretty header -->
+                <div class="card-header">
+                  <p class="text-primary m-0 fw-bold">Please confirm your wish to reset the password</p>
+                </div>
+                <div class="card-body">
+                  <!-- post form to the same handler -->
+                  <form method="post">
+                    <div class="mb-4">
+                      <button class="btn btn-success btn-sm" type="submit">Confirm</button>
+                    </div>
+                    <input type="hidden" name="hash" value="{{.U.Reset}}">
+                    <input type="hidden" name="logincsrf" value="{{.CSRF}}">
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{template "footer" .}}

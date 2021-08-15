@@ -1,0 +1,55 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      <h3 class="text-dark mb-4">Forgot password</h3>
+      <div class="row mb-4">
+        <!---  col-lg-8 is a bootstrap grid for mixed devices -->
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card mb-4">
+                <!-- pretty header -->
+                {{ if eq .State 1 }}
+                <div class="alert alert-success" role="alert">
+                  We have just sent out an email with more information to reset your password.
+                </div>
+                {{end}}
+                {{ if eq .State 2 }}
+                <div class="alert alert-danger" role="alert">
+                  There was some error processing your information. Would you please try again later?
+                </div>
+                {{end}}
+                {{ if ne .State 1 }}
+                <div class="card-header">
+                  <p class="text-primary m-0 fw-bold">Reenter your email address, and we will mail
+                    you a link to reset your password</p>
+                </div>
+                <div class="card-body">
+                  <!-- post form to the same handler -->
+                  <form method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="email"><strong>Email</strong></label><input class="form-control" type="text" id="email" placeholder="" name="email"></div>
+                      </div>
+                    </div>
+                    <div class="mb-4">
+                      <button class="btn btn-success btn-sm" type="submit">Reset password</button>
+                    </div>
+                    <input type="hidden" name="logincsrf" value="{{.CSRF}}">
+                  </form>
+                </div>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{template "footer" .}}

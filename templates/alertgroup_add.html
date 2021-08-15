@@ -1,0 +1,119 @@
+{{template "head" .}}
+<div class="d-flex flex-column" id="content-wrapper">
+  <div id="content">
+    <!-- Keep a small invisible div  for future usage
+        mb-4 also keeps margin to following container -->
+    <div class="mb-4 ">
+    </div>
+    <div class="container-fluid">
+      <div id="groupnamewarning" class="alert alert-warning collapse" role="alert">
+        Please enter a valid groupname
+      </div>
+      <div id="emailwarning" class="alert alert-warning collapse" role="alert">
+        Please add at least 1 valid email address
+      </div>
+      {{ range .Notices }}
+      <div class="alert alert-primary" role="alert">
+        {{ . }}
+      </div>
+      {{ end }}
+      {{ range .Errors }}
+      <div class="alert alert-warning" role="alert">
+        {{ . }}
+      </div>
+      {{ end }}
+      <div class="d-sm-flex justify-content-between align-items-center mb-4">
+        {{ if eq .NextFunction "edit" }}
+        <h3 class="text-dark mb-0">Edit alert group {{.AlertGroup.GroupName}}</h3>
+        {{ else }}
+        <h3 class="text-dark mb-0">Add alert group</h3>
+        {{ end }}
+      </div>
+      <div class="row mb-4">
+        <!---  col-lg-8 is a bootstrap grid for mixed devices -->
+        <div class="col-lg-8">
+          <div class="row">
+            <div class="col">
+              <div class="card mb-4">
+                <!-- pretty header -->
+                <div class="card-header">
+                  <a href="/alertgroups"><button type="button" class="btn btn-primary">Back to groups</button></a>
+                </div>
+                <div class="card-body">
+                  <!-- post formular to the same handler -->
+                  <form id="contactadd" method="post">
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="groupname">
+                          <strong>Name of the alert group</strong></label>
+                          <input class="form-control" required="required" type="text" id="groupname" placeholder="groupname" value="{{.AlertGroup.GroupName}}" name="groupname"></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col">
+                        <div class="mb-4"><label class="form-label" for="emails"><strong>Emails</strong></label>
+                          <div id="emails"></div>
+                      </div>
+                    </div>
+                    </div>
+                    <div class="mb-4"></div>
+                    <input type="hidden" name="csrf" value="{{.U.UserSession.CSRF}}">
+                    <input type="hidden" name="id" value="{{.AlertGroup.ContactID}}">
+                    <input type="hidden" name="nextfunction" value="{{.NextFunction}}">
+                    {{ if eq .NextFunction "edit" }}
+                    <button class="btn btn-success btn-sm" type="submit">Update group</button>
+                    {{ else }}
+                    <button class="btn btn-success btn-sm" type="submit">Create group</button>
+                    {{ end }}
+                  </form>
+                </div>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.js">
+</script>
+<!-- Email multiple -->
+<script src="assets/emailsinput/src/js/lib/utils.js"></script>
+<script src="assets/emailsinput/src/js/lib/emails-input.js"></script>
+<script>
+  (function(EmailsInput) {
+    'use strict'
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputContainerNode = document.querySelector('#emails')
+      const emailsInput = EmailsInput(inputContainerNode)
+      // window exposure
+      window.emailsInput = emailsInput
+
+      // template, pull in all contacts
+      {{ if eq .NextFunction "edit" }}
+      let str = "{{.AlertGroup.Emails}}"
+      const em = str.split(",");
+      for (var i = 0; i < em.length; i++) {
+        emailsInput.add(em[i]);
+      }
+      {{ end }}
+    })
+  }(window.lib.EmailsInput, window.lib.utils.random))
+
+  // on submit, attach email addresses value to the form as a hidden variable
+  $("#contactadd").submit( function(eventObj) {
+    // Check email addresses for valid records
+    const emails = emailsInput.getValue({ includeInvalid: true })
+    if(emails.length === 0) {
+      // no addresses valid? then show bootstrap warning
+      $('#emailwarning').show();
+      return false;
+    }
+    // add as a hidden attribute to the post
+    $("<input />").attr("type", "hidden").attr("name", "emails").attr("value", emails).appendTo("#contactadd");
+    return true;
+  });
+
+</script>
+{{template "footer" .}}
