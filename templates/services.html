@@ -138,10 +138,10 @@
 <script>
   // reload the overview every 30 seconds, so we have fresh information
   // todo someday: replace with datatable json reload function
-  window.setInterval('refresh()', 10000);
+  window.setInterval('refresh()', 30000);
   function refresh() {
     // todo, if the modal is visible, dont reload
-    window .location.reload(true);
+    window.location.reload(true);
   }
 </script>
 {{template "footer" .}}
