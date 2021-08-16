@@ -111,7 +111,6 @@
       $('#deleteModal').data('id', idelem).data('serviceid', id).modal('show');
       //$("#deleteModal .modal-body").text("Do you really want to remove the service?");
     });
-
     // catch delete-"YES" from modal window
     $("body").on('click', '#btnDeleteYes', function() {
       // read data-id from modal window
@@ -140,8 +139,11 @@
   // todo someday: replace with datatable json reload function
   window.setInterval('refresh()', 30000);
   function refresh() {
-    // todo, if the modal is visible, dont reload
-    window.location.reload(true);
+    if($('.modal.show').length) {
+      //
+    } else {
+      window.location.reload(true);
+    }
   }
 </script>
 {{template "footer" .}}
