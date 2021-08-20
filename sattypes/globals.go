@@ -60,20 +60,21 @@ type Global struct {
 
 // Service will be filled by sql driver and exported to the satellite agents in JSON
 type Service struct {
-	ServiceID      int64  `json:"serviceid"`
-	Name           string `json:"name"`
-	OwnerID        int64  `json:"ownerid"`
-	Type           string `json:"type"`
-	ToCheck        string `json:"tocheck"`
-	Expected       string `json:"expected"`
-	Interval       int    `json:"interval"`
-	ContactGroup   int    `json:"contactgroup"`
-	NextInterval   int    `json:"nextinterval"`
-	AlertGroupName string `json:"groupname"`
-	ServiceState   string `json:"servicestate"`
-	Exists         bool   `json:"exists"`
-	LastEvent      string `json:"lastevent"`
-	Locations      string `json:"locations"`
+	ServiceID      int64     `json:"serviceid"`
+	Name           string    `json:"name"`
+	OwnerID        int64     `json:"ownerid"`
+	Type           string    `json:"type"`
+	ToCheck        string    `json:"tocheck"`
+	Expected       string    `json:"expected"`
+	Interval       int       `json:"interval"`
+	ContactGroup   int       `json:"contactgroup"`
+	NextInterval   int       `json:"nextinterval"`
+	AlertGroupName string    `json:"groupname"`
+	ServiceState   string    `json:"servicestate"`
+	Exists         bool      `json:"exists"`
+	LastEvent      string    `json:"lastevent"`
+	LastSeen       time.Time `json:"lastseen"`
+	Locations      string    `json:"locations"`
 }
 
 // AlertGroup will be filled by sql driver
@@ -88,11 +89,12 @@ type AlertGroup struct {
 // ServiceResult is a struct, that will be posted back
 // as JSON to the server, then read by the analyzer
 type ServiceResult struct {
-	ServiceID int64     `json:"serviceID"`
-	Status    string    `json:"status"`
-	Message   string    `json:"message"`
-	Time      time.Time `json:"time"`
-	TestNode  string    `json:"node"`
+	ServiceID   int64     `json:"serviceID"`
+	Status      string    `json:"status"`
+	Message     string    `json:"message"`
+	Time        time.Time `json:"time"`
+	TestNode    string    `json:"node"`
+	RapidChange bool      `json:"rapidchange"`
 }
 
 // ServiceLog is a struct, that will  be used to
@@ -140,9 +142,10 @@ type SatAgentSql struct {
 
 // Service Results state as expression
 const (
-	_           = iota
-	ServiceUP   = "SERVICE_UP"
-	ServiceDown = "SERVICE_DOWN"
+	_              = iota
+	ServiceUP      = "SERVICE_UP"
+	ServiceDown    = "SERVICE_DOWN"
+	ServiceUnknown = "SERVICE_UNKNOWN"
 )
 
 // check password, encrypt incoming with bcrypt
@@ -283,12 +286,26 @@ Message: {{.R.Message}}
 
 BR
 IP Unfolded`
-	} else {
+	} else if s.ServiceState == ServiceDown {
 		state = "DOWN"
 		message = `
 IP-Unfolded monitoring service notification
 
 {{.S.Name}} is DOWN and has encountered an error.
+
+Type of Check: {{.S.Type}}
+Timepoint: {{.R.Time}}
+Message: {{.R.Message}}
+
+BR
+IP Unfolded
+`
+	} else if s.ServiceState == ServiceUnknown {
+		state = "UNKNOWN"
+		message = `
+IP-Unfolded monitoring service notification
+
+{{.S.Name}} is in an UNKNOWN state and unfolded not received any check results in the last 600 seconds.
 
 Type of Check: {{.S.Type}}
 Timepoint: {{.R.Time}}

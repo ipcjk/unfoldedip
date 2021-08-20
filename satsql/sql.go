@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 	"unfoldedip/sattypes"
 )
 
@@ -282,6 +283,23 @@ func SelectService(H sattypes.BaseHandler, arg string, argValue string, ownerid 
 	default:
 		return sattypes.Service{}, err
 	}
+}
+
+// UpdateServiceState updates a new service into the database
+func UpdateServiceLastSeenNow(H sattypes.BaseHandler, serviceID int64) error {
+	// prepare insert query for sqlite*/
+	stmt, err := H.DB.Prepare("UPDATE services set last_seen = ? where service_id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(time.Now().String(), serviceID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // UpdateServiceState updates a new service into the database

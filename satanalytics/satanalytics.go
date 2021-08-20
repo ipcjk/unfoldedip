@@ -11,12 +11,14 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unfoldedip/satsql"
 	"unfoldedip/sattypes"
 )
 
 type serviceTracking struct {
+	// currentState as string
 	state string
 	// keep track of maximum 64 results in memory
 	// saved as bitset where 1 = ServiceDown, 0 = ServiceUP
@@ -24,13 +26,16 @@ type serviceTracking struct {
 	// we will consider a service transition (down=>up, up=>down)
 	// for the last 8 bits
 	stateHistory uint64
+	lastSeen     time.Time
 }
 
 // satanalytics object with all necessary information
 type satanalytics struct {
 	Name          string
 	Tracker       map[int64]*serviceTracking
+	TrackerMutex  sync.Mutex
 	H             sattypes.BaseHandler
+	DeadService   chan int64
 	HasSMTPConfig bool
 	ReadMessages  int64
 }
@@ -71,10 +76,41 @@ func (s *satanalytics) load() {
 		log.Println("Cant load initial configuration", err)
 		return
 	}
+
 	// Walk every service and create a tracker
 	for _, service := range services {
-		s.Tracker[service.ServiceID] = &serviceTracking{state: service.ServiceState}
+		s.Tracker[service.ServiceID] = &serviceTracking{state: service.ServiceState, lastSeen: time.Now()}
 	}
+
+}
+
+// The dead service thread
+// will signal to the golang channel, if a service check has not been seen for a  long period
+func (s *satanalytics) deadServiceSwitch() {
+
+	// quickly lock the tracker
+	s.TrackerMutex.Lock()
+
+	for i := range s.Tracker {
+
+		// everything over 10 minutes is suspicious
+		if int(time.Since(s.Tracker[i].lastSeen)/time.Second) > 600 {
+
+			// pushing a message down the channel?
+			// attention, fixme, this could be a deadlock if the channel is FULl?
+			sattypes.ResultsChannel <- sattypes.ServiceResult{
+				ServiceID:   i,
+				Status:      sattypes.ServiceUnknown,
+				Message:     "Service is stalled, not any status received in the last 600 seconds",
+				Time:        time.Now(),
+				TestNode:    "analytics",
+				RapidChange: true,
+			}
+		}
+	}
+
+	// Unlock tracker mutex again
+	s.TrackerMutex.Unlock()
 
 }
 
@@ -101,7 +137,16 @@ func (s *satanalytics) Run() {
 					log.Println("Create new structure for unknown service")
 					log.Println(s.Tracker[result.ServiceID])
 				}
+				s.TrackerMutex.Lock()
 				s.Tracker[result.ServiceID] = &serviceTracking{state: ""}
+				s.TrackerMutex.Unlock()
+			}
+
+			// update lastseen attribute to "now"
+			s.Tracker[result.ServiceID].lastSeen = time.Now()
+			err := satsql.UpdateServiceLastSeenNow(s.H, result.ServiceID)
+			if err != nil {
+				log.Println(err)
 			}
 
 			// shift a 0, if the service is up
@@ -109,7 +154,7 @@ func (s *satanalytics) Run() {
 			if result.Status == sattypes.ServiceDown {
 				s.Tracker[result.ServiceID].stateHistory =
 					(s.Tracker[result.ServiceID].stateHistory << 1) | 0x1
-			} else {
+			} else if result.Status == sattypes.ServiceUP {
 				s.Tracker[result.ServiceID].stateHistory =
 					s.Tracker[result.ServiceID].stateHistory << 1
 			}
@@ -120,8 +165,10 @@ func (s *satanalytics) Run() {
 				(result.Status == sattypes.ServiceUP && s.Tracker[result.ServiceID].stateHistory&0x0F == 0x0) {
 				changeState = true
 			}
+
 			// possible changeState? From down to up?
-			if changeState && result.Status != s.Tracker[result.ServiceID].state {
+			// or RapidChange Event? For example, when hitting a stalled service
+			if changeState && result.Status != s.Tracker[result.ServiceID].state || result.RapidChange {
 				s.Tracker[result.ServiceID].state = result.Status
 				// and also in persistent in DB
 				err := satsql.UpdateServiceState(s.H, result.ServiceID, result.Status)
@@ -165,8 +212,9 @@ func (s *satanalytics) Run() {
 					log.Println("Service changed up/down", s.Tracker[result.ServiceID], result.Status)
 				}
 			}
-
 		case <-time.After(time.Second * 10):
+			// Do other work, like searching zombie services
+			s.deadServiceSwitch()
 			s.keepalive()
 		}
 	}

@@ -86,7 +86,7 @@ func main() {
 
 		// init resultsChannel
 		// with buffer till 100 messages
-		sattypes.ResultsChannel = make(chan sattypes.ServiceResult, 100)
+		sattypes.ResultsChannel = make(chan sattypes.ServiceResult, 128)
 
 		// HTTP server will contain the  sat analytics thread,
 		// so we need to create one
