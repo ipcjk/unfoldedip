@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS "alertgroup"
 	emails TEXT,
 	owner_id int
 );
-CREATE TABLE sqlite_sequence(name,seq);
 CREATE TABLE IF NOT EXISTS "satagents"
 (
 	satagent_id integer not null

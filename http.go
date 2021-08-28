@@ -651,6 +651,12 @@ func logout(writer http.ResponseWriter, request *http.Request, H sattypes.BaseHa
 // agentsConfig pushes configuration from services
 func agentsConfig(writer http.ResponseWriter, request *http.Request, H sattypes.BaseHandler) {
 
+	// Only accept GET
+	if request.Method != http.MethodGet {
+		writer.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	// check agents access key
 	satAgent, allowed := CheckAgentAccessKey(request, H)
 	if !allowed {
@@ -658,18 +664,9 @@ func agentsConfig(writer http.ResponseWriter, request *http.Request, H sattypes.
 		return
 	}
 
-	// Only accept GET
-	if request.Method != http.MethodGet {
-		writer.WriteHeader(http.StatusForbidden)
-		return
-	}
-
 	// return matching services from DB
-	var location = satAgent.SatAgentLocation
-	var onlyLocation = satAgent.SatOnlyLocation
-	dbServices, err := satsql.ReadServices(H, 0, location, onlyLocation)
+	dbServices, err := satsql.ReadServices(H, 0, satAgent.SatAgentLocation, satAgent.SatOnlyLocation)
 	if err != nil {
-		log.Println(err)
 		writer.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -681,10 +678,13 @@ func agentsConfig(writer http.ResponseWriter, request *http.Request, H sattypes.
 		return
 	}
 
+	dbServices = nil
+
 }
 
 // agentsResults takes services results from agents
 func agentsResults(writer http.ResponseWriter, request *http.Request, H sattypes.BaseHandler) {
+
 	// only accept POST
 	if request.Method != http.MethodPost {
 		writer.WriteHeader(http.StatusForbidden)
@@ -705,11 +705,15 @@ func agentsResults(writer http.ResponseWriter, request *http.Request, H sattypes
 		log.Println(err)
 	}
 
+	defer request.Body.Close()
+
 	// for every parsed result, ...
 	for i := range agentResults {
 		// ... send  result to analytics via golang channel
 		sattypes.ResultsChannel <- agentResults[i]
 	}
+
+	agentResults = nil
 
 	// thank back the sender with a statusOK
 	writer.WriteHeader(http.StatusOK)
@@ -801,7 +805,7 @@ func CheckCSRFToken(writer http.ResponseWriter, request *http.Request, H sattype
 	}
 
 	if H.Debug {
-		log.Println("service_add / CSRF is right", US.CSRF, request.FormValue("csrf"))
+		log.Println("CSRF is right", US.CSRF, request.FormValue("csrf"))
 	}
 
 	return true

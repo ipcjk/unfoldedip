@@ -43,8 +43,6 @@ func (s *satAgent) httpCheck(service sattypes.Service) sattypes.ServiceResult {
 		sResult.Message = err.Error()
 		return sResult
 	}
-	// close response body
-	defer resp.Body.Close()
 
 	// Status == 0, service is up, but
 	// also examine the HTTP statuscode
@@ -68,6 +66,9 @@ func (s *satAgent) httpCheck(service sattypes.Service) sattypes.ServiceResult {
 			}
 		}
 	}
+
+	// close response body
+	resp.Body.Close()
 
 	sResult.Message = fmt.Sprintf("HTTP Status: %d (%s) %s", resp.StatusCode, http.StatusText(resp.StatusCode),
 		expandedMessage)

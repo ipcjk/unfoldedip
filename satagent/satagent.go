@@ -152,6 +152,7 @@ func (s *satAgent) pullServerConfiguration() error {
 	}
 
 	// overwrite services
+	s.satServices = nil
 	s.satServices = agentServices
 	s.satServerLoaded = true
 	// unlockMutex
@@ -266,12 +267,14 @@ func (s *satAgent) Run() {
 	}
 
 	// busy loop, installing timer for waiting for checks
+	idleTimer := time.NewTicker(s.blockTime)
 	for {
 		// send some fancy message, that this thread is running
 		s.keepalive()
 		select {
 		// wait a specific time called blocktime then run pending serviceChecks
-		case <-time.After(s.blockTime):
+		case <-idleTimer.C:
+			idleTimer.Reset(s.blockTime)
 			// lock mutex as we are working on it
 			// for every service that is stored in our slice
 			s.satServicesMutex.Lock()
@@ -283,8 +286,10 @@ func (s *satAgent) Run() {
 				s.serviceInterval[s.satServices[i].ServiceID] = s.satServices[i].NextInterval
 				// if we reached our threshold, we need to run the check
 				if s.satServices[i].NextInterval <= 0 {
-					log.Println(s.hello(), "service check due", s.satServices[i].ServiceID,
-						s.satServices[i].NextInterval)
+					if s.debug {
+						log.Println(s.hello(), "service check due", s.satServices[i].ServiceID,
+							s.satServices[i].NextInterval)
+					}
 					// reset the service interval for next check
 					s.satServices[i].NextInterval = s.satServices[i].Interval
 					// start service check in a go thread, copy the object

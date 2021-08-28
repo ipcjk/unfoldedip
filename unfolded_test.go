@@ -67,6 +67,7 @@ func TestAnalyticsThread(t *testing.T) {
 
 	time.Sleep(time.Second * 1)
 	go satAnalytics.Run()
+	time.Sleep(time.Second * 3)
 	var messagesRead = satAnalytics.GetReadMessages()
 	if messagesRead != 1 {
 		t.Errorf("Read Messages shall be %d, but it is %d", 1, messagesRead)

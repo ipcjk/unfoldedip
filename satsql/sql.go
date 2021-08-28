@@ -17,6 +17,7 @@ func InsertService(H sattypes.BaseHandler, s *sattypes.Service) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	res, err := stmt.Exec(s.Type, s.Name, s.ToCheck, s.Interval, s.ContactGroup, s.OwnerID, s.Expected, s.Locations)
 	if err != nil {
@@ -40,6 +41,7 @@ func UpdateService(H sattypes.BaseHandler, s *sattypes.Service) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(s.Type, s.Name, s.ToCheck, s.Interval, s.ContactGroup, s.Expected, s.Locations, s.ServiceID)
 	if err != nil {
@@ -59,6 +61,7 @@ func InsertAlertGroup(H sattypes.BaseHandler, c *sattypes.AlertGroup) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// Run the query
 	res, err := stmt.Exec(c.GroupName, c.Emails, c.OwnerID)
@@ -83,6 +86,7 @@ func UpdateAlertGroup(H sattypes.BaseHandler, c *sattypes.AlertGroup) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// Run the query
 	_, err = stmt.Exec(c.GroupName, c.Emails, c.ContactID)
@@ -141,6 +145,8 @@ func DeleteService(H sattypes.BaseHandler, argValue int64) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
+
 	// execute prepared statement
 	_, err = stmt.Exec(argValue)
 	return err
@@ -153,6 +159,7 @@ func DeleteServiceLogs(H sattypes.BaseHandler, argValue int64) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	// execute prepared statement
 	_, err = stmt.Exec(argValue)
 	return err
@@ -165,6 +172,7 @@ func DeleteAlertGroup(H sattypes.BaseHandler, argValue int64) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	// execute prepared statement
 	_, err = stmt.Exec(argValue)
 	return err
@@ -186,7 +194,9 @@ func ReadServicesLog(H sattypes.BaseHandler, ownerID int64) ([]sattypes.ServiceL
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
+	// run query
 	rows, err = stmt.Query(ownerID)
 
 	// prepare rows close on exit
@@ -227,6 +237,7 @@ func ReadServiceLogs(H sattypes.BaseHandler, argValue string) ([]sattypes.Servic
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err = stmt.Query(argValue)
 
@@ -285,11 +296,12 @@ func SelectService(H sattypes.BaseHandler, arg string, argValue string, ownerid 
 	}
 }
 
-// UpdateServiceState updates a new service into the database
+// UpdateServiceState updates a service into the database with the last_seen column
 func UpdateServiceLastSeenNow(H sattypes.BaseHandler, serviceID int64) error {
 	// prepare insert query for sqlite*/
 	stmt, err := H.DB.Prepare("UPDATE services set last_seen = ? where service_id = ?")
 
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
@@ -324,6 +336,10 @@ func InsertServiceChange(H sattypes.BaseHandler, r sattypes.ServiceResult) error
 	// prepare insert query for sqlite*/
 	stmt, err := H.DB.Prepare("INSERT into service_log (service_id, status_date, " +
 		"status_from, status_to, status_why) values(?,CURRENT_TIMESTAMP,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 
 	var oldState, newState string
 
@@ -333,10 +349,6 @@ func InsertServiceChange(H sattypes.BaseHandler, r sattypes.ServiceResult) error
 	} else {
 		newState = "DOWN"
 		oldState = "UP"
-	}
-
-	if err != nil {
-		return err
 	}
 
 	_, err = stmt.Exec(r.ServiceID, oldState, newState, fmt.Sprintf("%s [%s]: %s", r.TestNode, r.Time, r.Message))
@@ -362,6 +374,7 @@ func InsertUser(H sattypes.BaseHandler, U *sattypes.UnfoldedUser) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// execute prepared statement
 	res, err := stmt.Exec(U.Email, U.PasswordHash)
@@ -386,6 +399,7 @@ func UpdateUser(H sattypes.BaseHandler, U sattypes.UnfoldedUser, arg, argvalue s
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// execute statement
 	_, err = stmt.Exec(argvalue, U.UserID)
@@ -402,6 +416,7 @@ func ReadServices(H sattypes.BaseHandler, ownerID int64, location string, onlyLo
 	var err error
 	var stmt *sql.Stmt
 	var rows *sql.Rows
+	var s sattypes.Service
 
 	// if ownerID == 0, we will read all services
 	if ownerID == 0 {
@@ -424,6 +439,7 @@ func ReadServices(H sattypes.BaseHandler, ownerID int64, location string, onlyLo
 			"where services.owner_id = ? order by service_state, last_event desc, service_id desc"))
 	}
 
+	defer stmt.Close()
 	// return empty  and error code on error
 	if err != nil {
 		return nil, err
@@ -439,17 +455,14 @@ func ReadServices(H sattypes.BaseHandler, ownerID int64, location string, onlyLo
 	} else {
 		rows, err = stmt.Query(ownerID)
 	}
+	defer rows.Close()
 	// return empty  and error code on error
 	if err != nil {
 		return nil, err
 	}
-	defer stmt.Close()
 
-	// prepare rows close on exit
-	defer rows.Close()
 	// scan up all rows
 	for rows.Next() {
-		var s sattypes.Service
 		err := rows.Scan(
 			&s.ServiceID, &s.Type, &s.Name, &s.ToCheck, &s.ContactGroup,
 			&s.Interval, &s.AlertGroupName, &s.ServiceState, &s.Expected, &s.LastEvent)
@@ -475,6 +488,7 @@ func ReadAlertGroups(H sattypes.BaseHandler, ownerID int64) ([]sattypes.AlertGro
 
 	stmt, err := H.DB.Prepare(fmt.Sprintf("select contact_id, groupname, emails, owner_id from " +
 		"alertgroup where owner_id = ? order by  groupname asc"))
+	defer stmt.Close()
 	// return empty user struct and error code on error
 	if err != nil {
 		return nil, err
@@ -486,7 +500,6 @@ func ReadAlertGroups(H sattypes.BaseHandler, ownerID int64) ([]sattypes.AlertGro
 	if err != nil {
 		return nil, err
 	}
-	defer stmt.Close()
 
 	// prepare rows close on exit
 	defer rows.Close()
@@ -533,9 +546,11 @@ func SearchAgentAccessKey(H sattypes.BaseHandler, accessNode, accessKey string) 
 func SelectAgent(H sattypes.BaseHandler, arg string, argValue string) (sattypes.SatAgentSql, error) {
 	var Agent sattypes.SatAgentSql
 
+	var query = fmt.Sprintf(
+		"select satagent_id, satagent_name, satagent_location, access_key, lastseen from satagents where %s = ?",
+		arg)
 	// run query
-	rows := H.DB.QueryRow(fmt.Sprintf("select satagent_id, satagent_name, satagent_location, access_key"+
-		",lastseen from satagents where %s = ?", arg), argValue)
+	rows := H.DB.QueryRow(query, argValue)
 
 	// return empty user struct and error code on error
 	switch err := rows.Scan(&Agent.SatAgentID, &Agent.SatAgentName, &Agent.SatAgentLocation, &Agent.AccessKey,
@@ -554,11 +569,12 @@ func SelectAgent(H sattypes.BaseHandler, arg string, argValue string) (sattypes.
 func InsertAgent(H sattypes.BaseHandler, agentName, accessKey, agentLocation string) error {
 	// prepare insert query for sqlite*/
 	stmt, err := H.DB.Prepare("INSERT into satagents" +
-		" (satagent_name, satagent_location, access_key, lastseen) values(?,?,?, date('now'))")
+		" (satagent_name, satagent_location, access_key, lastseen) values(?,?,?, datetime('NOW'))")
 
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(agentName, agentLocation, accessKey)
 	if err != nil {
@@ -572,9 +588,9 @@ func InsertAgent(H sattypes.BaseHandler, agentName, accessKey, agentLocation str
 // UpdateAgent updates a loation and lastseen of an agent
 func UpdateAgentLocation(H sattypes.BaseHandler, agentLocation, agentId string) error {
 	// prepare insert query for sqlite*/
-	stmt, err := H.DB.Prepare("update satagents set satagent_location=?, lastseen=date('now')" +
-		" where satagent_id=?")
-
+	stmt, err := H.DB.Prepare(
+		"update satagents set satagent_location=?, lastseen=datetime('now') where satagent_id=?")
+	defer stmt.Close()
 	if err != nil {
 		return err
 	}
@@ -587,9 +603,52 @@ func UpdateAgentLocation(H sattypes.BaseHandler, agentLocation, agentId string) 
 	return nil
 }
 
+// ReadAgents  returns a slice of possible sat agents
+func ReadAgents(H sattypes.BaseHandler) ([]sattypes.SatAgentSql, error) {
+	var agents []sattypes.SatAgentSql
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var err error
+
+	// prepare query to show the agents, that have been active for last -5 days
+	stmt, err = H.DB.Prepare(
+		"select satagent_id, satagent_name satagent_location from satagents where lastseen >= date('now', '-5 day')")
+
+	// return empty and error code on error
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err = stmt.Query()
+
+	// prepare rows close on exit
+	defer rows.Close()
+	// scan up all rows
+	for rows.Next() {
+		var s sattypes.SatAgentSql
+		err := rows.Scan(
+			&s.SatAgentID, &s.SatAgentName, &s.SatAgentLocation)
+		// return empty user struct and error code on error
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// return empty slice and error code on error
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// return filled  slice
+	return agents, nil
+
+}
+
 // ReadAgentLocations  returns a slice of possible sat agent regions
 func ReadAgentLocations(H sattypes.BaseHandler) ([]string, error) {
 	var locations []string
+	var location string
 	var stmt *sql.Stmt
 	var rows *sql.Rows
 	var err error
@@ -601,6 +660,7 @@ func ReadAgentLocations(H sattypes.BaseHandler) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err = stmt.Query()
 
@@ -608,7 +668,6 @@ func ReadAgentLocations(H sattypes.BaseHandler) ([]string, error) {
 	defer rows.Close()
 	// scan up all rows
 	for rows.Next() {
-		var location string
 		err := rows.Scan(
 			&location)
 		// return empty user struct and error code on error
@@ -637,6 +696,7 @@ func CheckEmptySession(H sattypes.BaseHandler, uuid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer stmt.Close()
 
 	// run query
 	rows, err := stmt.Query(uuid)
@@ -644,7 +704,6 @@ func CheckEmptySession(H sattypes.BaseHandler, uuid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer stmt.Close()
 
 	// prepare rows close on exit
 	defer rows.Close()
@@ -672,9 +731,11 @@ func CheckUserSession(H sattypes.BaseHandler, uuid string) (sattypes.Session, er
 
 	// check for real sessions where userid is not equal 0
 	stmt, err := H.DB.Prepare(fmt.Sprintf("select userid, csrf, sessionid from sessions where %s = ? and userid != 0", "sessionid"))
+
 	if err != nil {
 		return sattypes.Session{}, err
 	}
+	defer stmt.Close()
 
 	// run query
 	rows, err := stmt.Query(uuid)
@@ -682,7 +743,6 @@ func CheckUserSession(H sattypes.BaseHandler, uuid string) (sattypes.Session, er
 	if err != nil {
 		return sattypes.Session{}, err
 	}
-	defer stmt.Close()
 
 	// prepare rows close on exit
 	defer rows.Close()
@@ -708,9 +768,11 @@ func CheckUserSession(H sattypes.BaseHandler, uuid string) (sattypes.Session, er
 func UpdateSession(H sattypes.BaseHandler, Usersession sattypes.Session) error {
 	// prepare insert query for the new session
 	stmt, err := H.DB.Prepare("update sessions set last_activity = CURRENT_TIMESTAMP where sessionid = ?")
+
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// execute statement
 	_, err = stmt.Exec(Usersession.SessionID)
@@ -728,6 +790,7 @@ func DestroySession(H sattypes.BaseHandler, sessionid string) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// execute statement
 	_, err = stmt.Exec(sessionid)
@@ -742,9 +805,11 @@ func DestroySession(H sattypes.BaseHandler, sessionid string) error {
 func DestroySessions(H sattypes.BaseHandler) error {
 	// prepare query
 	stmt, err := H.DB.Prepare("delete from sessions where last_activity < date('now', '-1 day')")
+
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// execute statement
 	_, err = stmt.Exec()
@@ -763,6 +828,7 @@ func NewSession(H sattypes.BaseHandler, user sattypes.UnfoldedUser, uuid string,
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	// insert / execs against database
 	_, err = stmt.Exec(uuid, user.UserID, csrf)

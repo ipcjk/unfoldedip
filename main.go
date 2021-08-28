@@ -81,6 +81,8 @@ func main() {
 		if err != nil {
 			log.Panic(err)
 		}
+		// Set maximum limit
+		BaseHandler.DB.SetMaxOpenConns(1)
 		// close on exit
 		defer BaseHandler.DB.Close()
 

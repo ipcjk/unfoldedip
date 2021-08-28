@@ -9,6 +9,7 @@ package satanalytics
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,15 +30,20 @@ type serviceTracking struct {
 	lastSeen     time.Time
 }
 
+type agentTracking struct {
+	lastSeen time.Time
+}
+
 // satanalytics object with all necessary information
 type satanalytics struct {
-	Name          string
-	Tracker       map[int64]*serviceTracking
-	TrackerMutex  sync.Mutex
-	H             sattypes.BaseHandler
-	DeadService   chan int64
-	HasSMTPConfig bool
-	ReadMessages  int64
+	Name              string
+	Tracker           map[int64]*serviceTracking
+	TrackerMutex      sync.Mutex
+	AgentTracker      map[string]*agentTracking
+	AgentTrackerMutex sync.Mutex
+	H                 sattypes.BaseHandler
+	HasSMTPConfig     bool
+	ReadMessages      int64
 }
 
 // keepalive
@@ -64,7 +70,6 @@ func CreateSatAnalytics(name string, H sattypes.BaseHandler) *satanalytics {
 
 // load initial state from database
 func (s *satanalytics) load() {
-
 	if s.H.DB == nil {
 		log.Println("No database, cant load initial configuration")
 		return
@@ -82,6 +87,35 @@ func (s *satanalytics) load() {
 		s.Tracker[service.ServiceID] = &serviceTracking{state: service.ServiceState, lastSeen: time.Now()}
 	}
 
+	// Load agent nodes
+	//agents, err := satsql.ReadAgents(s.H)
+	//if err != nil && err != sql.ErrNoRows {
+	//	log.Println("Cant load initial configuration", err)
+	//	return
+	//}
+	// Walk every service and create a tracker
+	// this is optimistic currently, because we update lastSeen with current time and not with the actual
+	// value from the database (sqlite issue)
+	//for _, agent := range agents {
+	//	s.AgentTracker[agent.SatAgentID] = &agentTracking{lastSeen: time.Now()}
+	//}
+
+}
+
+// The dead node detection
+// will send mail to admin, if a node did not contact the server for a long period
+func (s *satanalytics) deadNodeSwitch() {
+	s.AgentTrackerMutex.Lock()
+
+	for i := range s.AgentTracker {
+		// everything over 60 minutes is suspicious
+		if int(time.Since(s.AgentTracker[i].lastSeen)/time.Second) > 3600 {
+			// FIXME, send mail to $x  or raise alert
+			log.Println("Node with ID ", i, "seems to be dead ")
+		}
+	}
+
+	s.AgentTrackerMutex.Unlock()
 }
 
 // The dead service thread
@@ -95,7 +129,6 @@ func (s *satanalytics) deadServiceSwitch() {
 
 		// everything over 10 minutes is suspicious
 		if int(time.Since(s.Tracker[i].lastSeen)/time.Second) > 600 {
-
 			// pushing a message down the channel?
 			// attention, fixme, this could be a deadlock if the channel is FULl?
 			sattypes.ResultsChannel <- sattypes.ServiceResult{
@@ -122,68 +155,69 @@ func (s *satanalytics) Run() {
 	// read / wait for channel messages on results
 	// result will be stored and then the "state" of the service
 	// will be calculated in kind of "quorom" - decision
+	idleTimer := time.NewTicker(time.Second * 10)
 	for {
 		select {
 		case r := <-sattypes.ResultsChannel:
+			idleTimer.Reset(time.Second * 10)
 			s.ReadMessages++
 			var sendNotification = false
-			result := r
 			if s.H.Debug && r.Status != sattypes.ServiceUP {
 				log.Println("Received from", r.TestNode, r.Message)
 			}
 			// if this is a new service, it is necessary to allocate some memory for tracking
-			if _, ok := s.Tracker[result.ServiceID]; !ok {
+			if _, ok := s.Tracker[r.ServiceID]; !ok {
 				if s.H.Debug {
 					log.Println("Create new structure for unknown service")
-					log.Println(s.Tracker[result.ServiceID])
+					log.Println(s.Tracker[r.ServiceID])
 				}
 				s.TrackerMutex.Lock()
-				s.Tracker[result.ServiceID] = &serviceTracking{state: ""}
+				s.Tracker[r.ServiceID] = &serviceTracking{state: ""}
 				s.TrackerMutex.Unlock()
 			}
 
 			// update lastseen attribute to "now"
-			s.Tracker[result.ServiceID].lastSeen = time.Now()
-			err := satsql.UpdateServiceLastSeenNow(s.H, result.ServiceID)
+			s.Tracker[r.ServiceID].lastSeen = time.Now()
+			err := satsql.UpdateServiceLastSeenNow(s.H, r.ServiceID)
 			if err != nil {
 				log.Println(err)
 			}
 
 			// shift a 0, if the service is up
 			// shift a 1 if the service is down
-			if result.Status == sattypes.ServiceDown {
-				s.Tracker[result.ServiceID].stateHistory =
-					(s.Tracker[result.ServiceID].stateHistory << 1) | 0x1
-			} else if result.Status == sattypes.ServiceUP {
-				s.Tracker[result.ServiceID].stateHistory =
-					s.Tracker[result.ServiceID].stateHistory << 1
+			if r.Status == sattypes.ServiceDown {
+				s.Tracker[r.ServiceID].stateHistory =
+					(s.Tracker[r.ServiceID].stateHistory << 1) | 0x1
+			} else if r.Status == sattypes.ServiceUP {
+				s.Tracker[r.ServiceID].stateHistory =
+					s.Tracker[r.ServiceID].stateHistory << 1
 			}
 
 			var changeState bool
 			// check if we were down or up for more than four requests
-			if (result.Status == sattypes.ServiceDown && s.Tracker[result.ServiceID].stateHistory&0x0F == 0x0F) ||
-				(result.Status == sattypes.ServiceUP && s.Tracker[result.ServiceID].stateHistory&0x0F == 0x0) {
+			if (r.Status == sattypes.ServiceDown && s.Tracker[r.ServiceID].stateHistory&0x0F == 0x0F) ||
+				(r.Status == sattypes.ServiceUP && s.Tracker[r.ServiceID].stateHistory&0x0F == 0x0) {
 				changeState = true
 			}
 
 			// possible changeState? From down to up?
 			// or RapidChange Event? For example, when hitting a stalled service
-			if changeState && result.Status != s.Tracker[result.ServiceID].state || result.RapidChange {
-				s.Tracker[result.ServiceID].state = result.Status
+			if changeState && r.Status != s.Tracker[r.ServiceID].state || r.RapidChange {
+				s.Tracker[r.ServiceID].state = r.Status
 				// and also in persistent in DB
-				err := satsql.UpdateServiceState(s.H, result.ServiceID, result.Status)
+				err := satsql.UpdateServiceState(s.H, r.ServiceID, r.Status)
 				if err != nil {
 					log.Println(err)
 				}
 				sendNotification = true
-				err = satsql.InsertServiceChange(s.H, result)
+				err = satsql.InsertServiceChange(s.H, r)
 				if err != nil {
 					log.Println(err)
 				}
 			}
 			// sendNotification
 			if sendNotification {
-				serviceID := strconv.FormatInt(result.ServiceID, 10)
+				serviceID := strconv.FormatInt(r.ServiceID, 10)
 				service, err := satsql.SelectService(s.H, "service_id", serviceID, 0)
 				if err == nil {
 					if s.HasSMTPConfig && service.ContactGroup != 0 {
@@ -192,11 +226,11 @@ func (s *satanalytics) Run() {
 							emails := strings.Split(contactGroups.Emails, ",")
 							for i := range emails {
 								go func(recipient string) {
-									err := s.H.SMTPConfiguration.SendServiceMail(service, result, recipient)
+									err := s.H.SMTPConfiguration.SendServiceMail(service, r, recipient)
 									if err != nil {
 										log.Println("SMTP-failed", err)
 										log.Println("Don't have working SMTP-configuration for sending alert")
-										log.Println("Service changed up/down", s.Tracker[result.ServiceID], result.Status)
+										log.Println("Service changed up/down", s.Tracker[r.ServiceID], r.Status)
 									}
 								}(emails[i])
 							}
@@ -204,15 +238,16 @@ func (s *satanalytics) Run() {
 						}
 					} else {
 						log.Println("Don't have working SMTP-configuration for sending alert")
-						log.Println("Service changed up/down", s.Tracker[result.ServiceID], result.Status)
-						log.Println(service, result)
+						log.Println("Service changed up/down", s.Tracker[r.ServiceID], r.Status)
+						log.Println(service, r)
 					}
 				}
 				if s.H.Debug {
-					log.Println("Service changed up/down", s.Tracker[result.ServiceID], result.Status)
+					log.Println("Service changed up/down", s.Tracker[r.ServiceID], r.Status)
 				}
 			}
-		case <-time.After(time.Second * 10):
+		case <-idleTimer.C:
+			runtime.GC()
 			// Do other work, like searching zombie services
 			s.deadServiceSwitch()
 			s.keepalive()
