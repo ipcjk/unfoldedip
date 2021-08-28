@@ -103,12 +103,13 @@ func TestAgentThread(t *testing.T) {
 
 	// create and start thread
 	s := satagent.CreateSatAgent("http://localhost:55543", "agent", "location", false, BaseHandler)
+	time.Sleep(time.Second * 2)
 	go s.Run()
 
 	select {
 	case <-mockChannel:
 		break
 	case <-time.After(4 * time.Second):
-		t.Error("Timeout watiing for satagent")
+		t.Error("Timeout waiting for satagent")
 	}
 }

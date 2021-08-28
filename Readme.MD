@@ -38,6 +38,27 @@ This will start unfolded  HTTP server and a local agent thread on *127.0.0.1* or
 then connect with your favorite browser. Your monitoring solution is ready. You can go ahead, point your browser to
 http://localhost:8080 and register a user account.
 
+### How to build your own version or join the development circle
+
+First, you need to clone the
+repository and install the dependencies. First, download and install
+a recent version of Go from https://golang.org/dl/ for your OS.
+
+Then clone the  repository,
+$ git clone https://github.com/ipcjk/unfoldedip/
+
+Install / update all necessary modules
+$ go mod tidy
+
+Run unit tests
+$ go test
+
+Build your own binary  
+$ go build
+
+Run, run, run  
+$ ./unfoldedip
+
 ### Start the complex way
 
 In a real-world scenario, you would like to run the HTTP server
@@ -117,7 +138,7 @@ In the current design, all parameters for servers and agents are valued on the c
 To use email notifications for service events and also to use *forget-password*-function, you need to configure an SMTP connector. This is currently done on the command line by setting the following arguments on the central
 server:
 
-- smtp containing the hostname and the TCP port of a valid SMTP server in the form *host:port*
+- SMTP containing the hostname and the TCP port of a valid SMTP server in the form *host:port*
 - smtpuser login for SMTP authentication
 - smtppass password for SMTP authentication
 - smtpsender sender email source for all mails
@@ -126,9 +147,9 @@ server:
 In real life, you would likely run the service behind a reverse proxy with
 Apache or Nginx. Here you can also add SSL encryption and use additional features like limiting access to the */agents*- URI path.
 
-Please see the file *nginx-sample.conf* in the distribution as an example.
+Please see the file *Nginx-sample.conf* in the distribution as an example.
 
-A full example behind a reverse proxy and a working SMTP connector looks like this:
+A complete example behind a reverse proxy and a working SMTP connector looks like this:
 
 `./unfolded.linux  -http 127.0.0.1:3000 -serverurl https://icmp.info -agentkey 253121 -agentname muc1 -agentloc Munich   -smtp icmp.info:25 -smtpuser unfolded -smtppass gj4782371 -smtpsender unfolded@icmp.info`
 
