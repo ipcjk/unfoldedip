@@ -40,17 +40,20 @@ http://localhost:8080 and register a user account.
 
 ### How to build your own version or join the development circle
 
-First, you need to clone the
-repository and install the dependencies. First, download and install
+First, download and install
 a recent version of Go from https://golang.org/dl/ for your OS.
 
-Then clone the  repository,
+Then, you need to clone the
+repository and install the dependencies.
+
 $ git clone https://github.com/ipcjk/unfoldedip/
 
 Install / update all necessary modules
+
 $ go mod tidy
 
 Run unit tests
+
 $ go test
 
 Build your own binary  
