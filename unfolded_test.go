@@ -61,7 +61,7 @@ func TestAnalyticsThread(t *testing.T) {
 	// create Channel
 	sattypes.ResultsChannel = make(chan sattypes.ServiceResult, 100)
 	// send message to analytics
-	sattypes.ResultsChannel <- sattypes.ServiceResult{ServiceID: -99, Status: sattypes.ServiceUP, Message: "OK"}
+	sattypes.ResultsChannel <- sattypes.ServiceResult{ServiceID: 99, Status: sattypes.ServiceUP, Message: "OK"}
 	// create Analytics thread
 	satAnalytics := satanalytics.CreateSatAnalytics("main", BaseHandler)
 
@@ -72,7 +72,15 @@ func TestAnalyticsThread(t *testing.T) {
 	if messagesRead != 1 {
 		t.Errorf("Read Messages shall be %d, but it is %d", 1, messagesRead)
 	}
-	BaseHandler.DB.Close()
+	defer BaseHandler.DB.Close()
+
+	tracker := satAnalytics.GetServicesTrack()
+	// service shall exist at this time
+	var ok bool
+	if _, ok = tracker[99]; !ok {
+		t.Errorf("Tracker for Service ID %d does not exist", 99)
+	}
+
 }
 
 // Test agent thread, run a service check

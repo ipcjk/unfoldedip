@@ -254,3 +254,8 @@ func (s *satanalytics) Run() {
 		}
 	}
 }
+
+// Return tracking information for debugging
+func (s *satanalytics) GetServicesTrack() map[int64]*serviceTracking {
+	return s.Tracker
+}

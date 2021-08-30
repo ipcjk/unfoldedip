@@ -259,7 +259,6 @@ func (s *satAgent) Run() {
 		err := s.pullServerConfiguration()
 		if err != nil {
 			log.Printf("%s Connection to web panel %s\n", s.hello(), err)
-			log.Printf("%s Retrying connection\n", s.hello())
 			time.Sleep(time.Second * 2)
 		} else {
 			log.Printf("%s retrieved configuration", s.hello())

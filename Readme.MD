@@ -14,7 +14,7 @@ The agent thread runs inside the HTTP server for smaller
 or local setups, therefore the easiest way to start is
 to run the unfolded program without any arguments.
 
-### Download
+### Download compiled version
 Check the latest release on the release tab, then process
 to download it and extract the contents.
 
@@ -40,27 +40,33 @@ http://localhost:8080 and register a user account.
 
 ### How to build your own version or join the development circle
 
+#### Download Go
 First, download and install
 a recent version of Go from https://golang.org/dl/ for your OS.
 
+#### Clone repo
 Then, you need to clone the
 repository and install the dependencies.
 
 $ git clone https://github.com/ipcjk/unfoldedip/
 
-Install / update all necessary modules
+#### Install / update all necessary modules
 
 $ go mod tidy
 
-Run unit tests
+#### Run unit tests
 
-$ go test
+$ go test -v ./...
 
-Build your own binary  
+#### Build your own binary  
 $ go build
 
-Run, run, run  
+#### Run, run, run  
 $ ./unfoldedip
+
+#### Unit tests
+
+
 
 ### Start the complex way
 
