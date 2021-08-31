@@ -43,7 +43,7 @@ http://localhost:8080 and register a user account.
 #### Download Go
 
 First, download and install
-a recent version of Go from https://golang.org/dl/ for your OS, at least 
+a recent version of Go from https://golang.org/dl/ for your OS, at least
 Go 1.16.
 
 #### Clone repo
@@ -71,13 +71,13 @@ $ ./unfoldedip
 
 #### Unit tests
 
-Currently there are unit tests available in their respectively directory for
+Currently, there are unit tests available in their respective directory for
 - satanalytics
 - satagent
 - ping
-- templates / smtp (in main package directory)
+- templates / SMTP (in main package directory)
 
-All tests can be run from main directory:
+The units tests can be run from main directory:
 $ go test -v ./...
 
 
@@ -121,7 +121,7 @@ If the connection were successful, you would see a similar output like this on t
 
 `2021/08/15 09:47:37 satagent.go:262: --- satagent Vodafone-cable (Munich-Trudering):  retrieved configuration`
 
-The server will automatically register this agent with it's key and its location to the database, and a new test location will be visible in the *service-add* menu.
+The server will automatically register this agent with it's key and location to the database, and a new test location will be visible in the *service-add* menu.
 
 #### location-only services
 
@@ -133,9 +133,9 @@ For example, the agent starting up with these command line parameters will only 
 
 #### Agent access control
 
-By default, the agent reads the access-key for accessing the server from the command line.  This is like a shared secret
-between server and agents. After the first connection, there will be an row inside the sqlite-database for every connected
-agents. Here you can modify the access keys for the agent with the sqlite - client or additional tools like SQLite-browser
+By default, the agent reads the access key for accessing the server from the command line.  This is like a shared secret
+between server and agents. After the first connection, there will be an row inside the SQLite-database for every connected
+agents. Here you can modify the access keys for the agent with the SQLite - client or additional tools like SQLite-browser
 inside the table called *satagents*:
 
     SQLite version 3.28.0 2019-04-15 14:49:49lite
@@ -157,7 +157,7 @@ In the current design, all parameters for servers and agents are valued on the c
 
 ### Configuring SMTP connector
 
-To use email notifications for service events and also to use *forget-password*-function, you need to configure an SMTP connector. This is currently done on the command line by setting the following arguments on the central
+To use email notifications for service events and the *forget-password*-function, you need to configure an SMTP connector. This is currently done on the command line by setting the following arguments on the central
 server:
 
 - SMTP containing the hostname and the TCP port of a valid SMTP server in the form *host:port*
@@ -213,7 +213,7 @@ Please call the binary with the *-h* - parameter to see additional, helpful argu
 ## When will service be down or up?
 
 Deciding when a service is transiting to a new state is hard. In this code, we use a very simplistic way. When a service result arrives, we save the
-service condition in a 64-bit long integer and shift the bits to the left. A  shift with 1 means the service is down. A 0 means the service is up. When the code sees 0xF (4x 1-bit set) on the LSB, the service is stated as down. When the code sees 0x0 (4x0 bit set), the service is stated to be up. Because we will receive events from different sources, this hopefully leads to an efficient and convincing result.
+service condition in a 64-bit long integer and shift the bits to the left. A  shift with 1 means the service is down. A 0 means the service is up. When the code sees 0xF (4x 1-bit set) on the LSB, the service is stated as down. When the code sees 0x0 (4x0 bit set), the service is said to be up. Because we will receive events from different sources, this hopefully leads to an efficient and convincing result.
 
 Other improvements are thinkable, for example, calling a third different source for a second guess on the service.
 
