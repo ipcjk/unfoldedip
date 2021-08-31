@@ -162,6 +162,9 @@ func login(writer http.ResponseWriter, request *http.Request, H sattypes.BaseHan
 			return
 		}
 		// login did not work, password mismatch
+		// delay
+		time.Sleep(time.Second * 3)
+		// clean session and jump back to main template
 		cleanAndTemplate(2, err)
 		return
 	}
