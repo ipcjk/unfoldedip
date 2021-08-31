@@ -7,8 +7,8 @@ import (
 	"unfoldedip/sattypes"
 )
 
-// tcpCheck checks a service for a successful tcp connection
-func (s *satAgent) tcpCheck(service sattypes.Service) sattypes.ServiceResult {
+// TCPCheck checks a service for a successful tcp connection
+func (s *satAgent) TCPCheck(service sattypes.Service) sattypes.ServiceResult {
 	log.Println(s.hello(), "TCP Check", service.ToCheck, service.ServiceID)
 
 	// prepare result set

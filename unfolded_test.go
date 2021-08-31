@@ -3,10 +3,8 @@ package main_test
 import (
 	"database/sql"
 	"html/template"
-	"net/http"
 	"testing"
 	"time"
-	"unfoldedip/satagent"
 	"unfoldedip/satanalytics"
 	"unfoldedip/sattypes"
 )
@@ -81,43 +79,4 @@ func TestAnalyticsThread(t *testing.T) {
 		t.Errorf("Tracker for Service ID %d does not exist", 99)
 	}
 
-}
-
-// Test agent thread, run a service check
-func TestAgentThread(t *testing.T) {
-	// Basehandler
-	var BaseHandler sattypes.BaseHandler
-	BaseHandler.SatKey = "93812"
-
-	// mocking channel
-	var mockChannel = make(chan struct{})
-
-	// Sample OK http, writes something in the mock channel
-	http.HandleFunc("/agents/config", func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("agent-name") == "agent" {
-			mockChannel <- struct{}{}
-		}
-		writer.WriteHeader(http.StatusOK)
-	})
-	http.HandleFunc("/agents/results", func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("agent-name") == "agent" {
-			mockChannel <- struct{}{}
-		}
-		writer.WriteHeader(http.StatusOK)
-	})
-
-	// start mock HTTP
-	go http.ListenAndServe("localhost:55543", nil)
-
-	// create and start thread
-	s := satagent.CreateSatAgent("http://localhost:55543", "agent", "location", false, BaseHandler)
-	time.Sleep(time.Second * 2)
-	go s.Run()
-
-	select {
-	case <-mockChannel:
-		break
-	case <-time.After(4 * time.Second):
-		t.Error("Timeout waiting for satagent")
-	}
 }

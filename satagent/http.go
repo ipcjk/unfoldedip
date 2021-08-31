@@ -10,8 +10,8 @@ import (
 	"unfoldedip/sattypes"
 )
 
-// httpCheck runs a HTTP Get query against a target
-func (s *satAgent) httpCheck(service sattypes.Service) sattypes.ServiceResult {
+// HTTPCheck runs a HTTP Get query against a target
+func (s *satAgent) HTTPCheck(service sattypes.Service) sattypes.ServiceResult {
 	var expandedMessage string
 	log.Println(s.hello(), "HTTP Check", service.ToCheck, service.ServiceID)
 

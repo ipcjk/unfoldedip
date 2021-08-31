@@ -6,8 +6,8 @@ import (
 	"unfoldedip/sattypes"
 )
 
-// pingCheck runs icmp ping echo against a target
-func (s *satAgent) pingCheck(service sattypes.Service) sattypes.ServiceResult {
+// PingCheck runs icmp ping echo against a target
+func (s *satAgent) PingCheck(service sattypes.Service) sattypes.ServiceResult {
 	log.Println(s.hello(), "Ping Check", service.ToCheck)
 
 	var r sattypes.ServiceResult = sattypes.ServiceResult{ServiceID: service.ServiceID}

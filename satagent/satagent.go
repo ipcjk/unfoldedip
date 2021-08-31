@@ -230,11 +230,11 @@ func (s *satAgent) postResults() {
 func (s *satAgent) runServiceCheck(service sattypes.Service) {
 	var result sattypes.ServiceResult
 	if service.Type == "http" {
-		result = s.httpCheck(service)
+		result = s.HTTPCheck(service)
 	} else if service.Type == "ping" {
-		result = s.pingCheck(service)
+		result = s.PingCheck(service)
 	} else if service.Type == "tcp" {
-		result = s.tcpCheck(service)
+		result = s.TCPCheck(service)
 	} else {
 		log.Println("Unknown check", result)
 	}

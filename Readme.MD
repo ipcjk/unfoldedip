@@ -41,11 +41,14 @@ http://localhost:8080 and register a user account.
 ### How to build your own version or join the development circle
 
 #### Download Go
+
 First, download and install
-a recent version of Go from https://golang.org/dl/ for your OS.
+a recent version of Go from https://golang.org/dl/ for your OS, at least 
+Go 1.16.
 
 #### Clone repo
-Then, you need to clone the
+
+Then, it would help if you cloned the
 repository and install the dependencies.
 
 $ git clone https://github.com/ipcjk/unfoldedip/
@@ -54,18 +57,28 @@ $ git clone https://github.com/ipcjk/unfoldedip/
 
 $ go mod tidy
 
-#### Run unit tests
+#### Run all unit tests
 
 $ go test -v ./...
 
-#### Build your own binary  
+#### Build your own binary
+
 $ go build
 
-#### Run, run, run  
+#### Run, run, run
+
 $ ./unfoldedip
 
 #### Unit tests
 
+Currently there are unit tests available in their respectively directory for
+- satanalytics
+- satagent
+- ping
+- templates / smtp (in main package directory)
+
+All tests can be run from main directory:
+$ go test -v ./...
 
 
 ### Start the complex way
@@ -156,7 +169,7 @@ server:
 In real life, you would likely run the service behind a reverse proxy with
 Apache or Nginx. Here you can also add SSL encryption and use additional features like limiting access to the */agents*- URI path.
 
-Please see the file *Nginx-sample.conf* in the distribution as an example.
+Please see the file *Nginx-sample.conf* in the distribution extra-directory as an example.
 
 A complete example behind a reverse proxy and a working SMTP connector looks like this:
 
