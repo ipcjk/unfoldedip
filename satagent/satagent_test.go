@@ -9,6 +9,27 @@ import (
 	"unfoldedip/sattypes"
 )
 
+// Test Cert
+func TestServiceCert(t *testing.T) {
+	// empty object
+	s := satagent.CreateSatAgent("", "", "", false, sattypes.BaseHandler{})
+
+	// HTTP Check
+	service := sattypes.Service{
+		ServiceID: 99,
+		Name:      "Mock-Check",
+		OwnerID:   0,
+		Type:      "tls",
+		ToCheck:   "google.com:443",
+		Expected:  "Google",
+	}
+	result := s.TLSCertCheck(service)
+
+	if result.Status != sattypes.ServiceUP {
+		t.Errorf("Status of cert check for google.com returned %s: %s", result.Status, result.Message)
+	}
+}
+
 // Test Service Check HTTP
 func TestServiceCheckHTTP(t *testing.T) {
 	// empty object

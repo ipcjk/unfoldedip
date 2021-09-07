@@ -70,6 +70,15 @@
                             <label class="form-check-label" for="tcp">
                               <i class="fas fa-ethernet">&nbsp; TCP</i></label>
                           </div>
+                          <div class="form-check">
+                            {{if eq "tls" .Service.Type }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="tls" checked name="checktype" value="tls">
+                            {{ else }}
+                            <input class="form-check-input" onclick="enabledisableinputs()"  type="radio" id="tls"  name="checktype" value="tls">
+                            {{ end }}
+                            <label class="form-check-label" for="tls">
+                              <i class="fas fa-lock">&nbsp; TLS</i></label>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -104,7 +113,7 @@
                     </div>
                     <div class="row">
                       <div class="col">
-                        <div class="mb-4"><label class="form-label" for="hosttcp"><strong>TCP-Connection</strong></label>
+                        <div class="mb-4"><label class="form-label" for="hosttcp"><strong>TCP/TLS-Connection</strong></label>
                           {{ if eq .Service.Type "tcp" }}
                           <input class="form-control"  type="text" id="hosttcp"  placeholder="hostname:portnumber" name="hosttcp"  value="{{.Service.ToCheck}}">
                           {{ else }}
@@ -204,6 +213,7 @@
             document.getElementById('httpurl').removeAttribute('disabled');
             break;
           case "tcp":
+          case "tls":
             document.getElementById("hostname").setAttribute('disabled', 'disabled')
             document.getElementById("httpurl").setAttribute('disabled', 'disabled')
             document.getElementById("expected").setAttribute('disabled', 'disabled')

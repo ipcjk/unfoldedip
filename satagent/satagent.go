@@ -235,6 +235,8 @@ func (s *satAgent) runServiceCheck(service sattypes.Service) {
 		result = s.PingCheck(service)
 	} else if service.Type == "tcp" {
 		result = s.TCPCheck(service)
+	} else if service.Type == "tls" {
+		result = s.TLSCertCheck(service)
 	} else {
 		log.Println("Unknown check", result)
 	}

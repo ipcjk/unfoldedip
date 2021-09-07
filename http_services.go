@@ -206,7 +206,7 @@ func serviceAdd(writer http.ResponseWriter, request *http.Request, H sattypes.Ba
 				}(request.Form["locations"])
 			case "checktype":
 				newService.Type = func(arg string) string {
-					if arg == "ping" || arg == "http" || arg == "tcp" {
+					if arg == "ping" || arg == "http" || arg == "tcp" || arg == "tls" {
 						return arg
 					}
 					g.Errors = append(g.Errors, "Unknown type of check, please correct")
@@ -293,7 +293,7 @@ func serviceAdd(writer http.ResponseWriter, request *http.Request, H sattypes.Ba
 			g.Errors = append(g.Errors, "No hostname or IP/IPv6 address given")
 		} else if newService.Type == "http" && newService.ToCheck == "" {
 			g.Errors = append(g.Errors, "No/Invalid URL given"+newService.Type+newService.ToCheck)
-		} else if newService.Type == "tcp" && newService.ToCheck == "" {
+		} else if (newService.Type == "tcp" || newService.Type == "tls") && newService.ToCheck == "" {
 			g.Errors = append(g.Errors, "No host and / or tcp port given")
 		} else if newService.Type == "" || newService.ToCheck == "" {
 			g.Errors = append(g.Errors, "No type or check given")

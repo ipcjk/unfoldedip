@@ -72,6 +72,12 @@
                   {{ $x.Name }}&nbsp;{{ $x.ToCheck }}{{end}}</i>
                 </td>
                 {{ end }}
+                {{ if eq $x.Type "tls" }}
+                <td><i class="fas fa-lock ">
+                  {{if eq $x.Name $x.ToCheck}}{{ $x.Name }}{{else}}
+                  {{ $x.Name }}&nbsp;{{ $x.ToCheck }}{{end}}</i>
+                </td>
+                {{ end }}
                 <td> <a href="/service_logs?id={{ $x.ServiceID}}">{{ $x.LastEvent }}</a></td>
                 <td>
                   <a href="/service_edit?id={{ $x.ServiceID}}"><i class="fas fa-edit"></i></a>
