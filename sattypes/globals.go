@@ -281,6 +281,8 @@ IP-Unfolded monitoring service notification
 {{.S.Name}} is UP and has recovered from an error or an unknown state.
 
 Type of Check: {{.S.Type}}
+Checked: {{.S.ToCheck}}
+
 Timepoint: {{.R.Time}}
 Message: {{.R.Message}}
 
@@ -294,6 +296,8 @@ IP-Unfolded monitoring service notification
 {{.S.Name}} is DOWN and has encountered an error.
 
 Type of Check: {{.S.Type}}
+Checked: {{.S.ToCheck}}
+
 Timepoint: {{.R.Time}}
 Message: {{.R.Message}}
 
@@ -308,6 +312,8 @@ IP-Unfolded monitoring service notification
 {{.S.Name}} is in an UNKNOWN state and unfolded not received any check results in the last 600 seconds.
 
 Type of Check: {{.S.Type}}
+Checked: {{.S.ToCheck}}
+
 Timepoint: {{.R.Time}}
 Message: {{.R.Message}}
 
