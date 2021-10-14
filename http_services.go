@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unfoldedip/satsql"
 	"unfoldedip/sattypes"
 )
@@ -425,6 +426,86 @@ func serviceDelete(writer http.ResponseWriter, request *http.Request, H sattypes
 			log.Println(err)
 			goto DefaultAndExit
 		}
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+
+	/* return no content */
+DefaultAndExit:
+	writer.WriteHeader(http.StatusNoContent)
+	return
+}
+
+// handle reset service (will be called by ajax query)
+// resets a service to "UNKNOWN"
+func serviceReset(writer http.ResponseWriter, request *http.Request, H sattypes.BaseHandler) {
+	// local variables
+	var g sattypes.Global
+	var resetService sattypes.Service
+	var serviceID string
+	var err error
+
+	// retrieve session
+	if g.U, g.U.LoggedIn = isLoggedIn(request, H); !g.U.LoggedIn {
+		http.Redirect(writer, request, "/login?session=expired6", http.StatusSeeOther)
+		return
+	}
+
+	// Not POST method? Then jump to clean up
+	if request.Method != http.MethodPost {
+		goto DefaultAndExit
+	}
+
+	/* read params from form  */
+	err = request.ParseForm()
+	if err != nil {
+		log.Println(err)
+		goto DefaultAndExit
+	}
+
+	// check if csrf token is valid
+	if !CheckCSRFToken(writer, request, H, g.U.UserSession) {
+		return
+	}
+
+	// read serviceID
+	serviceID = request.FormValue("id")
+	if serviceID == "" {
+		log.Println("No id for service reset")
+		goto DefaultAndExit
+	}
+
+	// retrieve service by service_id
+	resetService, err = satsql.SelectService(H, "service_id", serviceID, g.U.UserID)
+
+	// service exists and owner is current user, then reset
+	if err == nil && resetService.OwnerID == g.U.UserID {
+		if H.Debug {
+			log.Println("Resetting service", resetService.ServiceID)
+		}
+		err = satsql.ResetService(H, resetService.ServiceID)
+		if err != nil {
+			log.Println(err)
+			goto DefaultAndExit
+		}
+
+		// convert serviceID to int64
+		sID, err := strconv.ParseInt(serviceID, 10, 64)
+		if err == nil {
+			log.Println(err)
+		}
+
+		// pushing a message down the channel?
+		// attention, fixme, this could be a deadlock if the channel is FULl?
+		sattypes.ResultsChannel <- sattypes.ServiceResult{
+			ServiceID:   sID,
+			Status:      sattypes.ServiceUnknown,
+			Message:     "The service state has been reset",
+			Time:        time.Now(),
+			TestNode:    "User",
+			RapidChange: true,
+		}
+
 		writer.WriteHeader(http.StatusOK)
 		return
 	}

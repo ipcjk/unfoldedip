@@ -178,6 +178,21 @@ func DeleteAlertGroup(H sattypes.BaseHandler, argValue int64) error {
 	return err
 }
 
+// ResetService resets a service record selected by its id
+func ResetService(H sattypes.BaseHandler, argValue int64) error {
+	// prepare statement
+	stmt, err := H.DB.Prepare("update services set service_state='SERVICE_UNKNOWN' where service_id =  ?")
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer stmt.Close()
+
+	// execute prepared statement
+	_, err = stmt.Exec(argValue)
+	return err
+}
+
 // ReadServicesLog searches and return service logs for all services from an ownerId
 func ReadServicesLog(H sattypes.BaseHandler, ownerID int64) ([]sattypes.ServiceLog, error) {
 	var serviceLogs []sattypes.ServiceLog

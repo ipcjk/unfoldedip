@@ -126,7 +126,6 @@ func (s *satanalytics) deadServiceSwitch() {
 	s.TrackerMutex.Lock()
 
 	for i := range s.Tracker {
-
 		// everything over 10 minutes is suspicious
 		if int(time.Since(s.Tracker[i].lastSeen)/time.Second) > 600 {
 			// pushing a message down the channel?

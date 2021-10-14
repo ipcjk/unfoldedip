@@ -117,6 +117,8 @@ func main() {
 		http.HandleFunc("/service_add", func(writer http.ResponseWriter, request *http.Request) { serviceAdd(writer, request, BaseHandler) })
 		// function to handle the service_delete
 		http.HandleFunc("/service_delete", func(writer http.ResponseWriter, request *http.Request) { serviceDelete(writer, request, BaseHandler) })
+		// function to reset the service to unknown
+		http.HandleFunc("/service_reset", func(writer http.ResponseWriter, request *http.Request) { serviceReset(writer, request, BaseHandler) })
 		// function to list user services
 		http.HandleFunc("/services", func(writer http.ResponseWriter, request *http.Request) { services(writer, request, BaseHandler) })
 		// function to handle the services_log call

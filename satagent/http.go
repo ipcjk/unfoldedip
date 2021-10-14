@@ -13,7 +13,9 @@ import (
 // HTTPCheck runs a HTTP Get query against a target
 func (s *satAgent) HTTPCheck(service sattypes.Service) sattypes.ServiceResult {
 	var expandedMessage string
-	log.Println(s.hello(), "HTTP Check", service.ToCheck, service.ServiceID)
+	if s.debug {
+		log.Println(s.hello(), "HTTP Check", service.ToCheck, service.ServiceID)
+	}
 
 	// prepare result set
 	var sResult sattypes.ServiceResult
