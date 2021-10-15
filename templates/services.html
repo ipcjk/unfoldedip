@@ -175,9 +175,8 @@
     var id = $('#resetModal').data('id');
     // read service id from tr
     var serviceid = $('#resetModal').data('serviceid');
-    // FIXME
     // Change icon to "?" or reload?
-    // $('#' + id).parents("tr").remove();
+    $('#' + id).parents("tr").children('td:first').html("<i class=\"fas fa-question orangecolor\"></i>");
     // call to service to alert
     $.ajax({
       type: 'POST',
