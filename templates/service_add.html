@@ -102,7 +102,7 @@
                     </div>
                     <div class="row">
                       <div class="col">
-                        <div class="mb-4"><label class="form-label" for="hostname"><strong>Hostname or IP address</strong></label>
+                        <div class="mb-4"><label class="form-label" id="hostnamelabel" for="hostname"><strong>Hostname or IP address</strong></label>
                           {{ if eq .Service.Type "ping" }}
                           <input class="form-control" type="text" id="hostname" placeholder="host" name="hostname"  value="{{.Service.ToCheck}}">
                           {{ else }}
@@ -185,9 +185,9 @@
       </div>
     </div>
   </div>
-</div>
+  {{template "cfooter" .}}
+</div><a class="border rounded d-inline scroll-to-top" href="#page-top"><i class="fas fa-angle-up"></i></a>
 <script>
-
   // select update for locations
   $(function() {
     let str = $('#testlocations').val();
@@ -215,6 +215,7 @@
           case "tcp":
           case "tls":
             document.getElementById("hostname").setAttribute('disabled', 'disabled')
+            // document.getElementById("hostname").setAttribute('style', 'display:none;')
             document.getElementById("httpurl").setAttribute('disabled', 'disabled')
             document.getElementById("expected").setAttribute('disabled', 'disabled')
             document.getElementById('hosttcp').removeAttribute('disabled');
