@@ -14,6 +14,14 @@ The agent thread runs inside the HTTP server for smaller
 or local setups, therefore the easiest way to start is
 to run the unfolded program without any arguments.
 
+### Youtube Videos
+
+Deploy and run
+https://www.youtube.com/watch?v=EUsG1i-g71U
+
+Application Webapp Demo
+https://www.youtube.com/watch?v=f6oWuaVpCvE
+
 ### Download compiled version
 Check the latest release on the release tab, then process
 to download it and extract the contents.
